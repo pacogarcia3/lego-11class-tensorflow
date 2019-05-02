@@ -1,0 +1,3 @@
+https://www.kaggle.com/pacogarciam3/lego-brick-sorting-image-recognition
+
+https://www.kaggle.com/pacogarciam3/lego-vs-generic-brick-image-recognition
