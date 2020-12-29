@@ -28,7 +28,7 @@ import csv
 
 def load_graph(model_file):
   graph = tf.Graph()
-  graph_def = tf.GraphDef()
+  graph_def = tf.compat.v1.GraphDef()
 
   with open(model_file, "rb") as f:
     graph_def.ParseFromString(f.read())
@@ -41,7 +41,7 @@ def read_tensor_from_image_file(file_name, input_height=299, input_width=299,
 				input_mean=0, input_std=255):
   input_name = "file_reader"
   output_name = "normalized"
-  file_reader = tf.read_file(file_name, input_name)
+  file_reader = tf.io.read_file(file_name, input_name)
   if file_name.endswith(".png"):
     image_reader = tf.image.decode_png(file_reader, channels = 3,
                                        name='png_reader')
@@ -55,9 +55,9 @@ def read_tensor_from_image_file(file_name, input_height=299, input_width=299,
                                         name='jpeg_reader')
   float_caster = tf.cast(image_reader, tf.float32)
   dims_expander = tf.expand_dims(float_caster, 0);
-  resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
+  resized = tf.image.resize(dims_expander, [input_height, input_width], method=tf.image.ResizeMethod.BILINEAR)
   normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-  sess = tf.Session()
+  sess = tf.compat.v1.Session()
   result = sess.run(normalized)
   sess.close()
 
@@ -65,13 +65,13 @@ def read_tensor_from_image_file(file_name, input_height=299, input_width=299,
 
 def load_labels(label_file):
   label = []
-  proto_as_ascii_lines = tf.gfile.GFile(label_file).readlines()
+  proto_as_ascii_lines = tf.io.gfile.GFile(label_file).readlines()
   for l in proto_as_ascii_lines:
     label.append(l.rstrip())
   return label
 
 def label_image(file_name):
-  tf.logging.set_verbosity(tf.logging.ERROR)
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
   
   #file_name = "tf/eval_images/brick1x1_a.jpg"
@@ -100,7 +100,7 @@ def label_image(file_name):
   input_operation = graph.get_operation_by_name(input_name);
   output_operation = graph.get_operation_by_name(output_name);
 
-  with tf.Session(graph=graph) as sess:
+  with tf.compat.v1.Session(graph=graph) as sess:
     start = time.time()
     results = sess.run(output_operation.outputs[0],
                       {input_operation.outputs[0]: t})
@@ -134,7 +134,7 @@ def label_image(file_name):
 
 
 def batch_label_image(TFpath,imagePath,csvPath):
-  tf.logging.set_verbosity(tf.logging.ERROR)
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
   
   #file_name = "tf/eval_images/brick1x1_a.jpg"
@@ -152,12 +152,12 @@ def batch_label_image(TFpath,imagePath,csvPath):
 
 
 
-  if not tf.gfile.IsDirectory(imagePath):
+  if not tf.io.gfile.isdir(imagePath):
     #tf.logging.fatal('imagePath directory does not exist %s', imagePath)
     print('imagePath directory does not exist %s', imagePath)
     return
 
-  image_list = tf.gfile.ListDirectory(imagePath)
+  image_list = tf.io.gfile.listdir(imagePath)
   
   graph = load_graph(model_file)
 
@@ -168,7 +168,7 @@ def batch_label_image(TFpath,imagePath,csvPath):
   output_operation = graph.get_operation_by_name(output_name);
 
   resultString=""
-  with tf.Session(graph=graph) as sess:
+  with tf.compat.v1.Session(graph=graph) as sess:
     start = time.time()
     for img in image_list:
       if img[-4:]!=".jpg": break
